@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: gym-management
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/gym_management}
+    username: ${DB_USERNAME:gym}
+    password: ${DB_PASSWORD:gym}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+

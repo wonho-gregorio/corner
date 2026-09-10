@@ -1,0 +1,18 @@
+# Java
+backend/.gradle/
+backend/build/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# IDE and local files
+.idea/
+.vscode/
+*.iml
+.env
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
