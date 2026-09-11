@@ -65,6 +65,7 @@ cd backend
 - [위키 홈](docs/index.md)
 - [시작하기](docs/getting-started.md)
 - [아키텍처](docs/architecture.md)
+- [화면 구조와 업무 흐름](docs/navigation.md)
 - [업무 모듈](docs/modules.md)
 - [API 및 데이터 모델](docs/api-and-data.md)
 - [개발 가이드](docs/development.md)

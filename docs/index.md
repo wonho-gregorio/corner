@@ -11,6 +11,7 @@ Gym Management System은 도장 운영에 필요한 회원, 수강권, 출석, �
 | [시작하기](getting-started.md) | 요구 사항, 설치, 실행과 상태 확인 |
 | [아키텍처](architecture.md) | 시스템 구성과 모듈 경계 원칙 |
 | [제품 요구사항](product-requirements.md) | 1차 MVP 범위와 합의된 회원·회원권·결제·출석·알림 정책 |
+| [화면 구조와 업무 흐름](navigation.md) | 관리자·직원 메뉴, 주요 화면 구성과 화면 이동 흐름 |
 | [업무 모듈](modules.md) | 각 도메인의 책임과 협력 관계 |
 | [API 및 데이터 모델](api-and-data.md) | API·DB 문서화 규칙과 현재 상태 |
 | [개발 가이드](development.md) | 패키지 구성, 검증, 코드 변경 절차 |
