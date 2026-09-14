@@ -2,19 +2,19 @@
 
 ## 목적과 상태
 
-이 문서는 확정된 1차 MVP 정책을 PostgreSQL 17 관계형 모델로 옮긴 기준입니다. 전체 설계는 완료되었고 `auth`·`member` 영역은 **V1 구현 완료**, 나머지 영역은 구현 대기 상태입니다.
+이 문서는 확정된 1차 MVP 정책을 PostgreSQL 17 관계형 모델로 옮긴 기준입니다. 전체 설계는 완료되었고 `auth`·`member` 영역은 **V1**, 상품·행사·발급 회원권·휴회·횟수 원장은 **V2 구현 완료** 상태입니다. 환불과 연결되는 회원권 해지 원장은 V3에 포함합니다.
 
 ### 구현 현황
 
 | 버전 | 범위 | 상태 | 구현 파일 |
 | --- | --- | --- | --- |
 | V1 | 도장 설정, 직원 계정·권한·세션, 감사·아웃박스, 회원·그룹·보호자·관계·동의·이력 | 구현 완료 | `V1__create_core_auth_and_member.sql` |
-| V2 | 상품·행사·회원권·휴회·기간 및 횟수 원장 | 예정 | - |
+| V2 | 상품·행사·회원권·휴회·기간 및 횟수 원장 | 구현 완료 | `V2__create_membership_domain.sql` |
 | V3 | 청구·분할 납부·결제·취소·환불 원장 | 예정 | - |
 | V4 | 수업·출석·출석 정정 | 예정 | - |
 | V5 | 알림 설정·발송 작업·공급자 시도 이력 | 예정 | - |
 
-V1은 Flyway 스키마와 JPA 영속 엔티티가 함께 구현되어 있습니다. 애플리케이션 서비스와 HTTP API는 후속 구현 범위입니다.
+V1·V2는 Flyway 스키마와 JPA 영속 엔티티가 함께 구현되어 있습니다. 애플리케이션 서비스와 HTTP API는 후속 구현 범위입니다.
 
 핵심 목표는 다음과 같습니다.
 
@@ -111,7 +111,7 @@ erDiagram
 
 | 테이블 | 주요 컬럼 | 핵심 제약과 용도 |
 | --- | --- | --- |
-| `membership_products` | `id`, `gym_id`, `name`, `type`, `duration_value`, `duration_unit`, `validity_value`, `validity_unit`, `total_count`, `list_price_won`, `sale_status`, 분할·미납·휴회 정책 컬럼 | 유형별 조건부 검사 적용. 정책 기본값은 부분·분할 납부와 휴회 모두 미허용 |
+| `membership_products` | `id`, `gym_id`, `name`, `product_type`, `duration_value`, `duration_unit`, `validity_value`, `validity_unit`, `total_count`, `list_price_won`, `sale_status`, 분할·미납·휴회 정책 컬럼 | 유형별 조건부 검사 적용. 정책 기본값은 부분·분할 납부와 휴회 모두 미허용 |
 | `promotions` | `id`, `gym_id`, `name`, `starts_on`, `ends_on`, `discount_type`, `discount_value`, `status`, `admin_memo` | 기간 순서, 할인값 양수, 정률 100 이하 검사 |
 | `promotion_products` | `promotion_id`, `product_id` | 복합 PK. 정액 할인은 연결 상품 가격보다 작아야 하며 서비스에서 트랜잭션 검증 |
 | `memberships` | `id`, `gym_id`, `member_id`, `product_id`, `promotion_id`, `status`, `start_date`, `end_date`, `total_count`, `remaining_count`, `list_price_won`, `discount_won`, `contract_amount_won`, `terms_snapshot`, `version` | 발급 당시 상품·행사·정책 스냅샷 보존. 회원·상품은 발급 후 변경 금지 |
