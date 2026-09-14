@@ -68,6 +68,7 @@ cd backend
 - [화면 구조와 업무 흐름](docs/navigation.md)
 - [업무 모듈](docs/modules.md)
 - [API 및 데이터 모델](docs/api-and-data.md)
+- [데이터베이스 설계](docs/database-design.md)
 - [개발 가이드](docs/development.md)
 - [운영 및 문제 해결](docs/operations.md)
 - [로드맵](docs/roadmap.md)

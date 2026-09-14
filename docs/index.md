@@ -14,6 +14,7 @@ Gym Management System은 도장 운영에 필요한 회원, 수강권, 출석, �
 | [화면 구조와 업무 흐름](navigation.md) | 관리자·직원 메뉴, 주요 화면 구성과 화면 이동 흐름 |
 | [업무 모듈](modules.md) | 각 도메인의 책임과 협력 관계 |
 | [API 및 데이터 모델](api-and-data.md) | API·DB 문서화 규칙과 현재 상태 |
+| [데이터베이스 설계](database-design.md) | ERD, 테이블·원장, 제약조건, 인덱스와 트랜잭션 기준 |
 | [개발 가이드](development.md) | 패키지 구성, 검증, 코드 변경 절차 |
 | [운영 및 문제 해결](operations.md) | 환경 변수, 헬스 체크와 흔한 오류 |
 | [로드맵](roadmap.md) | 구현 순서와 완료 기준 |
