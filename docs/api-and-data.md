@@ -2,7 +2,7 @@
 
 ## 현재 상태
 
-업무용 HTTP API, JPA 엔티티, Flyway 마이그레이션은 아직 구현되지 않았습니다. PostgreSQL 업무 스키마는 [데이터베이스 설계](database-design.md)에 정의되어 있으며 현재 노출된 관리 엔드포인트는 Spring Boot Actuator의 상태 확인 엔드포인트입니다.
+업무용 HTTP API는 아직 구현되지 않았습니다. PostgreSQL 업무 스키마는 [데이터베이스 설계](database-design.md)에 정의되어 있으며, V1에서 `auth`·`member` 영역의 Flyway 마이그레이션과 JPA 영속 엔티티를 구현했습니다. 현재 노출된 관리 엔드포인트는 Spring Boot Actuator의 상태 확인 엔드포인트입니다.
 
 | 메서드 | 경로 | 용도 |
 | --- | --- | --- |
@@ -50,8 +50,8 @@ API 경로와 오류 응답 형식은 첫 업무 API를 구현할 때 프로젝�
 
 | 테이블 영역 | 소유 모듈 | 설명 | 상태 |
 | --- | --- | --- | --- |
-| `gyms`, `staff_*`, `auth_refresh_sessions`, `audit_logs`, `outbox_events` | `auth` | 도장 설정, 계정·권한, 인증 세션과 감사·이벤트 | 설계 완료·미구현 |
-| `member_*`, `members`, `guardians` | `member` | 회원, 그룹, 보호자, 가족관계, 동의와 상태 이력 | 설계 완료·미구현 |
+| `gyms`, `staff_*`, `auth_refresh_sessions`, `audit_logs`, `outbox_events` | `auth` | 도장 설정, 계정·권한, 인증 세션과 감사·이벤트 | V1 구현 완료 |
+| `member_*`, `members`, `guardians` | `member` | 회원, 그룹, 보호자, 가족관계, 동의와 상태 이력 | V1 구현 완료 |
 | `membership_*`, `promotions`, `promotion_products` | `membership` | 상품, 행사, 발급 회원권, 휴회, 날짜·횟수 원장 | 설계 완료·미구현 |
 | `charges`, `charge_*`, `payment_*` | `payment` | 청구, 납부 계획, 결제·취소·정정·환불 원장 | 설계 완료·미구현 |
 | `lesson_*` | `lesson` | 반복 수업과 날짜별 실제 수업 | 설계 완료·미구현 |
