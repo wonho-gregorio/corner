@@ -18,3 +18,12 @@ management:
       exposure:
         include: health,info
 
+app:
+  auth:
+    issuer: gym-management
+    access-token-ttl: PT15M
+    refresh-token-ttl: P30D
+    jwt-secret: ${AUTH_JWT_SECRET:local-development-secret-change-before-production}
+  cors:
+    allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:5173}
+

@@ -17,10 +17,12 @@ Actuator에서 외부에 노출하도록 설정된 엔드포인트는 `health`�
 | `DB_URL` | PostgreSQL JDBC 주소 |
 | `DB_USERNAME` | PostgreSQL 사용자 |
 | `DB_PASSWORD` | PostgreSQL 비밀번호 |
+| `AUTH_JWT_SECRET` | JWT HMAC 서명 키. 운영 환경에서 32바이트 이상 무작위 값 필수 |
+| `CORS_ALLOWED_ORIGIN` | 프런트엔드 허용 Origin. 개발 기본값 `http://localhost:5173` |
 | `SOLAPI_API_KEY` | SOLAPI API 키 |
 | `SOLAPI_API_SECRET` | SOLAPI API 시크릿 |
 
-운영 환경에서는 `compose.yml`의 개발용 비밀번호를 사용하지 않습니다. 비밀 관리 수단으로 값을 주입하고 로그나 오류 응답에 노출되지 않도록 합니다.
+운영 환경에서는 `compose.yml`의 개발용 비밀번호와 애플리케이션의 개발용 JWT 기본 키를 사용하지 않습니다. `AUTH_JWT_SECRET`에는 32바이트 이상의 무작위 값을 비밀 관리 수단으로 주입하고 로그나 오류 응답에 노출되지 않도록 합니다.
 
 SOLAPI 자격 증명 파일과 실제 키 값은 저장소에 커밋하지 않습니다. 개발 환경의 실제 발송 테스트는 허용된 테스트 수신번호로 제한합니다.
 

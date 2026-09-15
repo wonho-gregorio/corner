@@ -40,6 +40,25 @@ class GymEntity {
     private Instant updatedAt;
     private Long updatedBy;
     @Version private long version;
+
+    static GymEntity create(String name, String representativePhone, String address, String addressDetail, Instant now) {
+        var gym = new GymEntity();
+        gym.name = name;
+        gym.representativePhone = representativePhone;
+        gym.address = address;
+        gym.addressDetail = addressDetail;
+        gym.memberNumberFormat = "YYYYMM-####";
+        gym.checkoutEnabled = false;
+        gym.createdAt = now;
+        gym.updatedAt = now;
+        return gym;
+    }
+
+    void assignInitialAdministrator(long accountId, Instant now) {
+        createdBy = accountId;
+        updatedBy = accountId;
+        updatedAt = now;
+    }
 }
 
 enum StaffRole { ADMIN, STAFF }
@@ -67,6 +86,44 @@ class StaffAccountEntity {
     private Instant updatedAt;
     private Long updatedBy;
     @Version private long version;
+
+    static StaffAccountEntity createInitialAdmin(long gymId, String loginId, String passwordHash, String name, Instant now) {
+        var account = new StaffAccountEntity();
+        account.gymId = gymId;
+        account.loginId = loginId;
+        account.passwordHash = passwordHash;
+        account.name = name;
+        account.role = StaffRole.ADMIN;
+        account.status = StaffStatus.ACTIVE;
+        account.mustChangePassword = false;
+        account.sessionVersion = 0;
+        account.createdAt = now;
+        account.updatedAt = now;
+        return account;
+    }
+
+    void assignInitialAuditActor(long accountId, Instant now) {
+        createdBy = accountId;
+        updatedBy = accountId;
+        updatedAt = now;
+    }
+
+    boolean isActive() {
+        return status == StaffStatus.ACTIVE;
+    }
+
+    void recordLogin(Instant now) {
+        lastLoginAt = now;
+        updatedAt = now;
+    }
+
+    void changePassword(String newPasswordHash, Instant now) {
+        passwordHash = newPasswordHash;
+        mustChangePassword = false;
+        sessionVersion++;
+        updatedAt = now;
+        updatedBy = id;
+    }
 }
 
 @Getter
@@ -106,6 +163,36 @@ class AuthRefreshSessionEntity {
     private Instant createdAt;
     private String createdIp;
     private String userAgent;
+
+    static AuthRefreshSessionEntity create(
+            long accountId,
+            String tokenHash,
+            long sessionVersion,
+            Instant expiresAt,
+            Instant now,
+            String createdIp,
+            String userAgent
+    ) {
+        var session = new AuthRefreshSessionEntity();
+        session.staffAccountId = accountId;
+        session.tokenHash = tokenHash;
+        session.sessionVersion = sessionVersion;
+        session.expiresAt = expiresAt;
+        session.createdAt = now;
+        session.createdIp = createdIp;
+        session.userAgent = userAgent;
+        return session;
+    }
+
+    boolean isUsableAt(Instant now) {
+        return revokedAt == null && expiresAt.isAfter(now);
+    }
+
+    void revoke(Instant now) {
+        if (revokedAt == null) {
+            revokedAt = now;
+        }
+    }
 }
 
 @Getter
@@ -129,6 +216,29 @@ class AuditLogEntity {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> afterValues;
     private Instant occurredAt;
+
+    static AuditLogEntity create(
+            long gymId,
+            Long actorAccountId,
+            String action,
+            String subjectType,
+            String subjectId,
+            Map<String, Object> beforeValues,
+            Map<String, Object> afterValues,
+            Instant now
+    ) {
+        var log = new AuditLogEntity();
+        log.gymId = gymId;
+        log.actorAccountId = actorAccountId;
+        log.module = "AUTH";
+        log.action = action;
+        log.subjectType = subjectType;
+        log.subjectId = subjectId;
+        log.beforeValues = beforeValues;
+        log.afterValues = afterValues;
+        log.occurredAt = now;
+        return log;
+    }
 }
 
 @Getter

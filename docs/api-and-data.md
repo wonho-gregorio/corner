@@ -2,14 +2,23 @@
 
 ## 현재 상태
 
-업무용 HTTP API는 아직 구현되지 않았습니다. PostgreSQL 업무 스키마는 [데이터베이스 설계](database-design.md)에 정의되어 있으며 V1~V5 Flyway 마이그레이션과 JPA 영속 엔티티 구현을 완료했습니다. 현재 노출된 관리 엔드포인트는 Spring Boot Actuator의 상태 확인 엔드포인트입니다.
+PostgreSQL 업무 스키마와 JPA 영속 엔티티 구현을 완료했고, 최초 도장 설정과 직원 인증 API를 구현했습니다. 회원·회원권·결제·출석 등 나머지 업무 API는 후속 구현 범위입니다.
 
 | 메서드 | 경로 | 용도 |
 | --- | --- | --- |
 | `GET` | `/actuator/health` | 애플리케이션 상태 확인 |
 | `GET` | `/actuator/info` | 애플리케이션 정보 확인 |
+| `GET` | `/api/setup/status` | 최초 설정 완료 여부 확인 |
+| `POST` | `/api/setup` | 최초 도장과 관리자 계정 생성 |
+| `POST` | `/api/auth/login` | 직원 로그인 |
+| `POST` | `/api/auth/refresh` | 접근·갱신 토큰 회전 발급 |
+| `POST` | `/api/auth/logout` | 갱신 토큰 폐기 |
+| `GET` | `/api/auth/me` | 현재 직원·역할·권한 확인 |
+| `POST` | `/api/auth/change-password` | 본인 비밀번호 변경과 기존 세션 만료 |
 
-Spring Security 설정이 추가되기 전에는 실제 접근 정책이 달라질 수 있습니다.
+`setup`, `setup/status`, `login`, `refresh`, `logout`, 상태 확인을 제외한 경로에는 `Authorization: Bearer <access-token>`이 필요합니다. 접근 토큰은 15분, 갱신 토큰은 30일이 기본이며 갱신 시 기존 토큰을 즉시 폐기합니다. 계정 상태·역할·권한과 `session_version`을 요청마다 DB에서 다시 확인하므로 계정 비활성화와 비밀번호 변경이 기존 접근 토큰에도 즉시 반영됩니다.
+
+최초 설정은 PostgreSQL advisory lock 안에서 한 번만 실행되며 이후 요청은 `409 Conflict`입니다. 로그인 아이디는 영문·숫자·점·밑줄·하이픈 4~50자, 비밀번호는 10~72자를 허용합니다. 임시 비밀번호 변경이 필요한 직원은 `me`, `change-password`, `logout` 외 업무 API를 사용할 수 없습니다.
 
 ## API 작성 규칙
 
