@@ -2,7 +2,7 @@
 
 ## 목적과 상태
 
-이 문서는 확정된 1차 MVP 정책을 PostgreSQL 17 관계형 모델로 옮긴 기준입니다. 전체 설계는 완료되었고 `auth`·`member` 영역은 **V1**, 상품·회원권은 **V2**, 결제·해지는 **V3**, 수업·출석은 **V4 구현 완료** 상태입니다.
+이 문서는 확정된 1차 MVP 정책을 PostgreSQL 17 관계형 모델로 옮긴 기준입니다. 전체 설계와 V1~V5 Flyway 스키마·JPA 영속 엔티티 구현을 완료했습니다.
 
 ### 구현 현황
 
@@ -12,9 +12,9 @@
 | V2 | 상품·행사·회원권·휴회·기간 및 횟수 원장 | 구현 완료 | `V2__create_membership_domain.sql` |
 | V3 | 청구·분할 납부·결제·취소·정정·환불·회원권 해지 원장 | 구현 완료 | `V3__create_payment_domain.sql` |
 | V4 | 반복 수업·실제 수업·출석·취소·시간 정정·관리자 예외 | 구현 완료 | `V4__create_lesson_and_attendance_domain.sql` |
-| V5 | 알림 설정·발송 작업·공급자 시도 이력 | 예정 | - |
+| V5 | 알림 설정 버전·발송 작업·공급자 시도 이력 | 구현 완료 | `V5__create_notification_domain.sql` |
 
-V1~V4는 Flyway 스키마와 JPA 영속 엔티티가 함께 구현되어 있습니다. 애플리케이션 서비스와 HTTP API는 후속 구현 범위입니다.
+V1~V5는 Flyway 스키마와 JPA 영속 엔티티가 함께 구현되어 있습니다. 애플리케이션 서비스와 HTTP API는 후속 구현 범위입니다.
 
 핵심 목표는 다음과 같습니다.
 
@@ -164,7 +164,7 @@ erDiagram
 | `notification_senders` | `id`, `gym_id`, `provider`, `provider_sender_id`, `phone`, `status` | SOLAPI 등록 발신번호의 로컬 참조. 비밀 키 저장 금지 |
 | `notification_test_recipients` | `id`, `gym_id`, `name`, `phone`, `normalized_phone`, `status` | 관리자 테스트 발송 허용 목록 |
 | `notification_setting_versions` | `id`, `gym_id`, `version_no`, `enabled`, `send_time`, `title_template`, `body_template`, `sender_id`, `active_from`, `retired_at`, `created_by` | 수정할 때 새 버전 생성. 도장별 현재 버전은 한 건 |
-| `notification_jobs` | `id`, `gym_id`, `member_id`, `setting_version_id`, `job_type`, `reregistration_date`, `recipient_name`, `recipient_phone_masked`, `recipient_phone_ciphertext`, `title_snapshot`, `body_snapshot`, `message_type`, `status`, `next_attempt_at`, `attempt_count`, `claimed_at`, `sent_at`, `failure_code` | 실제·테스트 발송과 최종 치환 문구 스냅샷. `PENDING`, `PROCESSING`, `SENT`, `FAILED`, `CANCELLED` |
+| `notification_jobs` | `id`, `gym_id`, `member_id`, `setting_version_id`, `job_type`, `reregistration_date`, `recipient_name`, `recipient_phone_masked`, `recipient_phone_ciphertext`, `recipient_phone_hash`, `title_snapshot`, `body_snapshot`, `message_type`, `status`, `next_attempt_at`, `attempt_count`, `claimed_at`, `sent_at`, `failure_code` | 실제·테스트 발송과 최종 치환 문구 스냅샷. 번호 검색에는 HMAC 해시 사용. `PENDING`, `PROCESSING`, `SENT`, `FAILED`, `CANCELLED` |
 | `notification_attempts` | `id`, `job_id`, `attempt_no`, `requested_at`, `completed_at`, `provider_message_id`, `result`, `failure_code`, `provider_response` | 공급자 호출별 추가 전용 이력. `(job_id, attempt_no)` 유일 |
 
 실제 재등록 문자는 `(gym_id, member_id, reregistration_date, job_type)` 유일 제약으로 중복 생성을 막습니다. 테스트 발송은 별도 `job_type`을 사용합니다. 여러 워커는 `for update skip locked`로 `PENDING` 작업을 짧게 선점한 뒤 SOLAPI 호출은 트랜잭션 밖에서 수행합니다.
@@ -234,13 +234,12 @@ PostgreSQL은 외래키 인덱스를 자동 생성하지 않으므로 모든 외
 ## Flyway 구현 순서
 
 1. `V1__create_core_auth_and_member.sql`
-2. `V2__create_membership.sql`
-3. `V3__create_payment.sql`
-4. `V4__create_lesson_and_attendance.sql`
-5. `V5__create_notification.sql`
-6. `V6__seed_default_gym_and_groups.sql`
+2. `V2__create_membership_domain.sql`
+3. `V3__create_payment_domain.sql`
+4. `V4__create_lesson_and_attendance_domain.sql`
+5. `V5__create_notification_domain.sql`
 
-초기 관리자 비밀번호는 마이그레이션에 평문이나 고정 해시로 넣지 않습니다. 별도 초기화 명령에서 환경 변수로 받아 BCrypt 또는 Argon2 해시를 생성합니다. 각 Flyway 버전은 대응 JPA 엔티티와 통합 테스트를 같은 변경에 포함합니다.
+기본 도장·그룹과 초기 관리자는 고정 데이터 마이그레이션으로 만들지 않습니다. 후속 초기화 명령에서 운영자가 값을 입력하고, 관리자 비밀번호는 BCrypt 또는 Argon2로 해시합니다.
 
 ## 구현 검증 항목
 

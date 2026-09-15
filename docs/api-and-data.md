@@ -2,7 +2,7 @@
 
 ## 현재 상태
 
-업무용 HTTP API는 아직 구현되지 않았습니다. PostgreSQL 업무 스키마는 [데이터베이스 설계](database-design.md)에 정의되어 있으며 V1~V4에서 인증·회원, 상품·회원권, 결제·해지, 수업·출석 영역의 Flyway 마이그레이션과 JPA 영속 엔티티를 구현했습니다. 현재 노출된 관리 엔드포인트는 Spring Boot Actuator의 상태 확인 엔드포인트입니다.
+업무용 HTTP API는 아직 구현되지 않았습니다. PostgreSQL 업무 스키마는 [데이터베이스 설계](database-design.md)에 정의되어 있으며 V1~V5 Flyway 마이그레이션과 JPA 영속 엔티티 구현을 완료했습니다. 현재 노출된 관리 엔드포인트는 Spring Boot Actuator의 상태 확인 엔드포인트입니다.
 
 | 메서드 | 경로 | 용도 |
 | --- | --- | --- |
@@ -57,7 +57,7 @@ API 경로와 오류 응답 형식은 첫 업무 API를 구현할 때 프로젝�
 | `charges`, `charge_*`, `payment_*` | `payment` | 청구, 납부 계획, 결제·취소·정정·환불 원장 | V3 구현 완료 |
 | `lesson_*` | `lesson` | 반복 수업과 날짜별 실제 수업 | V4 구현 완료 |
 | `attendances`, `attendance_*` | `attendance` | 출석 원기록, 취소·시간 정정과 예외 승인 | V4 구현 완료 |
-| `notification_*` | `notification` | 문자 설정 버전, 발송 작업과 공급자 시도 이력 | 설계 완료·미구현 |
+| `notification_*` | `notification` | 문자 설정 버전, 발송 작업과 공급자 시도 이력 | V5 구현 완료 |
 
 개인정보를 저장할 때는 보관 기간, 마스킹, 접근 권한과 삭제 정책도 함께 정의해야 합니다.
 
