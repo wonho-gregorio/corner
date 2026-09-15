@@ -73,18 +73,19 @@ class StaffManagementService {
 
         var now = clock.instant();
         var temporaryPassword = generateTemporaryPassword();
+        StaffAccountEntity account;
         try {
-            var account = accounts.saveAndFlush(StaffAccountEntity.create(
+            account = accounts.saveAndFlush(StaffAccountEntity.create(
                     gymId, command.loginId().trim(), passwordEncoder.encode(temporaryPassword), command.name().trim(),
                     command.role(), command.status(), actorAccountId, now));
-            replacePermissions(account, command.permissions(), actorAccountId, now);
-            auditLogs.save(AuditLogEntity.create(
-                    gymId, actorAccountId, "STAFF_CREATED", "STAFF_ACCOUNT", account.getId().toString(), null,
-                    auditValues(account, permissionNamesForRole(account.getRole(), command.permissions())), now));
-            return new CreatedStaff(toView(account, permissionNamesForRole(account.getRole(), command.permissions())), temporaryPassword);
         } catch (DataIntegrityViolationException exception) {
             throw duplicateLoginId();
         }
+        replacePermissions(account, command.permissions(), actorAccountId, now);
+        auditLogs.save(AuditLogEntity.create(
+                gymId, actorAccountId, "STAFF_CREATED", "STAFF_ACCOUNT", account.getId().toString(), null,
+                auditValues(account, permissionNamesForRole(account.getRole(), command.permissions())), now));
+        return new CreatedStaff(toView(account, permissionNamesForRole(account.getRole(), command.permissions())), temporaryPassword);
     }
 
     @Transactional

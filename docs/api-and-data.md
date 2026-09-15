@@ -20,12 +20,19 @@ PostgreSQL 업무 스키마와 JPA 영속 엔티티 구현을 완료했고, 최�
 | `GET` | `/api/staff/{accountId}` | 직원 계정 상세 |
 | `PUT` | `/api/staff/{accountId}` | 이름·로그인 아이디·역할·상태·권한 변경 |
 | `POST` | `/api/staff/{accountId}/temporary-password` | 임시 비밀번호 재발급과 기존 세션 만료 |
+| `GET` | `/api/settings/gym` | 도장 정보와 퇴실 시간 사용 정책 조회 |
+| `PUT` | `/api/settings/gym` | 도장명·연락처·주소·퇴실 시간 사용 정책 수정 |
+| `GET` | `/api/member-groups` | 회원 그룹 목록 조회 |
+| `POST` | `/api/member-groups` | 회원 그룹 생성 |
+| `PUT` | `/api/member-groups/{groupId}` | 회원 그룹명·순서·상태 수정 |
 
 `setup`, `setup/status`, `login`, `refresh`, `logout`, 상태 확인을 제외한 경로에는 `Authorization: Bearer <access-token>`이 필요합니다. 접근 토큰은 15분, 갱신 토큰은 30일이 기본이며 갱신 시 기존 토큰을 즉시 폐기합니다. 계정 상태·역할·권한과 `session_version`을 요청마다 DB에서 다시 확인하므로 계정 비활성화와 비밀번호 변경이 기존 접근 토큰에도 즉시 반영됩니다.
 
 최초 설정은 PostgreSQL advisory lock 안에서 한 번만 실행되며 이후 요청은 `409 Conflict`입니다. 로그인 아이디는 영문·숫자·점·밑줄·하이픈 4~50자, 비밀번호는 10~72자를 허용합니다. 임시 비밀번호 변경이 필요한 직원은 `me`, `change-password`, `logout` 외 업무 API를 사용할 수 없습니다.
 
 직원 관리 API는 `ADMIN` 전용입니다. 계정 활성화·비활성화는 `PUT` 요청의 `status` 값만 사용하며 별도 비활성화 엔드포인트는 두지 않습니다. 직원에게는 `MEMBER_MANAGE`, `ATTENDANCE_PROCESS`, `PAYMENT_REGISTER`만 부여할 수 있고 관리자 권한은 전체로 고정됩니다. 마지막 활성 관리자를 직원으로 변경하거나 비활성화하려는 요청은 도장 행을 잠근 상태에서 검사하고 `409 Conflict`로 거부합니다. 생성·재발급된 임시 비밀번호는 해당 응답에서 한 번만 제공하며 DB와 감사 로그에는 해시나 원문을 노출하지 않습니다.
+
+도장 설정과 회원 그룹 관리 API도 `ADMIN` 전용입니다. 회원 그룹명은 도장 안에서 대소문자를 무시하고 중복될 수 없으며 그룹은 물리 삭제하지 않고 `ACTIVE`, `INACTIVE` 상태로 관리합니다. 도장 설정과 그룹 생성·수정은 처리자·처리 시각과 변경 전후 값을 감사 로그에 남깁니다.
 
 ## API 작성 규칙
 

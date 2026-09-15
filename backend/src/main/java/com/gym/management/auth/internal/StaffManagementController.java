@@ -1,5 +1,6 @@
 package com.gym.management.auth.internal;
 
+import com.gym.management.auth.AuthenticatedStaff;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

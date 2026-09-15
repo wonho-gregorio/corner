@@ -1,5 +1,6 @@
 package com.gym.management.auth.internal;
 
+import com.gym.management.auth.AuthenticatedStaff;
 import jakarta.persistence.EntityManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;

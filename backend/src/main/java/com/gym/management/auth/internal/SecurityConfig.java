@@ -1,5 +1,6 @@
 package com.gym.management.auth.internal;
 
+import com.gym.management.auth.AuthenticatedStaff;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -114,17 +115,6 @@ class SecurityConfig {
     }
 }
 
-record AuthenticatedStaff(
-        long accountId,
-        long gymId,
-        String loginId,
-        String name,
-        StaffRole role,
-        List<String> permissions,
-        boolean mustChangePassword
-) {
-}
-
 @Component
 class AccessTokenFilter extends OncePerRequestFilter {
     private static final List<String> PASSWORD_CHANGE_ALLOWED_PATHS = List.of(
@@ -170,7 +160,7 @@ class AccessTokenFilter extends OncePerRequestFilter {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + account.getRole().name()));
             permissionNames.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
             var principal = new AuthenticatedStaff(
-                    account.getId(), account.getGymId(), account.getLoginId(), account.getName(), account.getRole(),
+                    account.getId(), account.getGymId(), account.getLoginId(), account.getName(), account.getRole().name(),
                     permissionNames, account.isMustChangePassword());
             SecurityContextHolder.getContext().setAuthentication(
                     UsernamePasswordAuthenticationToken.authenticated(principal, null, authorities));

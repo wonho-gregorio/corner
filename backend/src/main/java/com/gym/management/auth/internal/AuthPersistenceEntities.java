@@ -59,6 +59,24 @@ class GymEntity {
         updatedBy = accountId;
         updatedAt = now;
     }
+
+    void updateSettings(
+            String name,
+            String representativePhone,
+            String address,
+            String addressDetail,
+            boolean checkoutEnabled,
+            long updatedBy,
+            Instant now
+    ) {
+        this.name = name;
+        this.representativePhone = representativePhone;
+        this.address = address;
+        this.addressDetail = addressDetail;
+        this.checkoutEnabled = checkoutEnabled;
+        this.updatedBy = updatedBy;
+        this.updatedAt = now;
+    }
 }
 
 enum StaffRole { ADMIN, STAFF }
@@ -295,13 +313,30 @@ class AuditLogEntity {
             Map<String, Object> afterValues,
             Instant now
     ) {
+        return create(gymId, actorAccountId, "AUTH", action, subjectType, subjectId, null,
+                beforeValues, afterValues, now);
+    }
+
+    static AuditLogEntity create(
+            long gymId,
+            Long actorAccountId,
+            String module,
+            String action,
+            String subjectType,
+            String subjectId,
+            String reason,
+            Map<String, Object> beforeValues,
+            Map<String, Object> afterValues,
+            Instant now
+    ) {
         var log = new AuditLogEntity();
         log.gymId = gymId;
         log.actorAccountId = actorAccountId;
-        log.module = "AUTH";
+        log.module = module;
         log.action = action;
         log.subjectType = subjectType;
         log.subjectId = subjectId;
+        log.reason = reason;
         log.beforeValues = beforeValues;
         log.afterValues = afterValues;
         log.occurredAt = now;

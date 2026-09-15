@@ -63,6 +63,34 @@ class MemberGroupEntity {
     private Instant updatedAt;
     private Long updatedBy;
     @Version private long version;
+
+    static MemberGroupEntity create(
+            long gymId,
+            String name,
+            int displayOrder,
+            RecordStatus status,
+            long createdBy,
+            Instant now
+    ) {
+        var group = new MemberGroupEntity();
+        group.gymId = gymId;
+        group.name = name;
+        group.displayOrder = displayOrder;
+        group.status = status;
+        group.createdAt = now;
+        group.createdBy = createdBy;
+        group.updatedAt = now;
+        group.updatedBy = createdBy;
+        return group;
+    }
+
+    void update(String name, int displayOrder, RecordStatus status, long updatedBy, Instant now) {
+        this.name = name;
+        this.displayOrder = displayOrder;
+        this.status = status;
+        this.updatedBy = updatedBy;
+        this.updatedAt = now;
+    }
 }
 
 @Getter
