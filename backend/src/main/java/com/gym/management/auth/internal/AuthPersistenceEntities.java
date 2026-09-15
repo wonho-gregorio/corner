@@ -102,6 +102,32 @@ class StaffAccountEntity {
         return account;
     }
 
+    static StaffAccountEntity create(
+            long gymId,
+            String loginId,
+            String passwordHash,
+            String name,
+            StaffRole role,
+            StaffStatus status,
+            long createdBy,
+            Instant now
+    ) {
+        var account = new StaffAccountEntity();
+        account.gymId = gymId;
+        account.loginId = loginId;
+        account.passwordHash = passwordHash;
+        account.name = name;
+        account.role = role;
+        account.status = status;
+        account.mustChangePassword = true;
+        account.sessionVersion = 0;
+        account.createdAt = now;
+        account.createdBy = createdBy;
+        account.updatedAt = now;
+        account.updatedBy = createdBy;
+        return account;
+    }
+
     void assignInitialAuditActor(long accountId, Instant now) {
         createdBy = accountId;
         updatedBy = accountId;
@@ -124,6 +150,33 @@ class StaffAccountEntity {
         updatedAt = now;
         updatedBy = id;
     }
+
+    void updateProfile(
+            String loginId,
+            String name,
+            StaffRole role,
+            StaffStatus status,
+            long updatedBy,
+            Instant now
+    ) {
+        if (this.status == StaffStatus.ACTIVE && status == StaffStatus.INACTIVE) {
+            sessionVersion++;
+        }
+        this.loginId = loginId;
+        this.name = name;
+        this.role = role;
+        this.status = status;
+        this.updatedBy = updatedBy;
+        this.updatedAt = now;
+    }
+
+    void reissueTemporaryPassword(String temporaryPasswordHash, long updatedBy, Instant now) {
+        passwordHash = temporaryPasswordHash;
+        mustChangePassword = true;
+        sessionVersion++;
+        this.updatedBy = updatedBy;
+        updatedAt = now;
+    }
 }
 
 @Getter
@@ -135,6 +188,14 @@ class StaffPermissionEntity {
     private StaffPermissionId id;
     private Instant grantedAt;
     private Long grantedBy;
+
+    static StaffPermissionEntity grant(long accountId, StaffPermission permission, long grantedBy, Instant now) {
+        var entity = new StaffPermissionEntity();
+        entity.id = StaffPermissionId.of(accountId, permission);
+        entity.grantedAt = now;
+        entity.grantedBy = grantedBy;
+        return entity;
+    }
 }
 
 @Getter
@@ -146,6 +207,13 @@ class StaffPermissionId implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(name = "permission_code")
     private StaffPermission permission;
+
+    static StaffPermissionId of(long accountId, StaffPermission permission) {
+        var id = new StaffPermissionId();
+        id.staffAccountId = accountId;
+        id.permission = permission;
+        return id;
+    }
 }
 
 @Getter
