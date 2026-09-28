@@ -49,6 +49,28 @@ class ChargeEntity {
     private Instant updatedAt;
     private Long updatedBy;
     @Version private long version;
+
+    static ChargeEntity create(
+            long gymId, long memberId, long membershipId, ChargePlanType planType,
+            long contractAmountWon, LocalDate firstDueOn, long actorAccountId, Instant now
+    ) {
+        var charge = new ChargeEntity();
+        charge.gymId = gymId;
+        charge.memberId = memberId;
+        charge.membershipId = membershipId;
+        charge.planType = planType;
+        charge.contractAmountWon = contractAmountWon;
+        charge.adjustedAmountWon = contractAmountWon;
+        charge.paidAmountWon = 0;
+        charge.balanceWon = contractAmountWon;
+        charge.status = contractAmountWon == 0 ? ChargeStatus.PAID : ChargeStatus.SCHEDULED;
+        charge.firstDueOn = firstDueOn;
+        charge.createdAt = now;
+        charge.createdBy = actorAccountId;
+        charge.updatedAt = now;
+        charge.updatedBy = actorAccountId;
+        return charge;
+    }
 }
 
 @Getter
@@ -67,6 +89,21 @@ class ChargeInstallmentEntity {
     private Instant createdAt;
     private Instant updatedAt;
     @Version private long version;
+
+    static ChargeInstallmentEntity create(
+            long chargeId, int installmentNo, LocalDate dueOn, long amountWon, Instant now
+    ) {
+        var installment = new ChargeInstallmentEntity();
+        installment.chargeId = chargeId;
+        installment.installmentNo = installmentNo;
+        installment.dueOn = dueOn;
+        installment.amountWon = amountWon;
+        installment.paidAmountWon = 0;
+        installment.status = amountWon == 0 ? ChargeStatus.PAID : ChargeStatus.SCHEDULED;
+        installment.createdAt = now;
+        installment.updatedAt = now;
+        return installment;
+    }
 }
 
 @Getter

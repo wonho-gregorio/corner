@@ -245,6 +245,7 @@ class MembershipEntity {
     private Long memberId;
     private Long productId;
     private Long promotionId;
+    private String idempotencyKey;
     @Enumerated(EnumType.STRING) private ProductType productType;
     @Enumerated(EnumType.STRING) private MembershipStatus status;
     private LocalDate startDate;
@@ -263,6 +264,36 @@ class MembershipEntity {
     private Instant updatedAt;
     private Long updatedBy;
     @Version private long version;
+
+    static MembershipEntity create(
+            long gymId, long memberId, long productId, Long promotionId, String idempotencyKey,
+            ProductType productType, MembershipStatus status, LocalDate startDate, LocalDate endDate,
+            Integer totalCount, long listPriceWon, long discountWon, long contractAmountWon,
+            Map<String, Object> termsSnapshot, long actorAccountId, Instant now
+    ) {
+        var membership = new MembershipEntity();
+        membership.gymId = gymId;
+        membership.memberId = memberId;
+        membership.productId = productId;
+        membership.promotionId = promotionId;
+        membership.idempotencyKey = idempotencyKey;
+        membership.productType = productType;
+        membership.status = status;
+        membership.startDate = startDate;
+        membership.endDate = endDate;
+        membership.totalCount = totalCount;
+        membership.remainingCount = totalCount;
+        membership.listPriceWon = listPriceWon;
+        membership.discountWon = discountWon;
+        membership.contractAmountWon = contractAmountWon;
+        membership.termsSnapshot = Map.copyOf(termsSnapshot);
+        membership.issuedAt = now;
+        membership.issuedBy = actorAccountId;
+        membership.createdAt = now;
+        membership.updatedAt = now;
+        membership.updatedBy = actorAccountId;
+        return membership;
+    }
 }
 
 @Getter
@@ -303,6 +334,22 @@ class MembershipEventEntity {
     private String reason;
     private Long actorAccountId;
     private Instant createdAt;
+
+    static MembershipEventEntity issued(
+            long membershipId, MembershipStatus status, LocalDate startDate, LocalDate endDate,
+            long actorAccountId, Instant now
+    ) {
+        var event = new MembershipEventEntity();
+        event.membershipId = membershipId;
+        event.eventType = MembershipEventType.ISSUED;
+        event.toStatus = status;
+        event.newStartDate = startDate;
+        event.newEndDate = endDate;
+        event.effectiveAt = now;
+        event.actorAccountId = actorAccountId;
+        event.createdAt = now;
+        return event;
+    }
 }
 
 @Getter
@@ -321,4 +368,18 @@ class MembershipCountEntryEntity {
     private String reason;
     private Long actorAccountId;
     private Instant createdAt;
+
+    static MembershipCountEntryEntity issued(
+            long membershipId, int totalCount, long actorAccountId, Instant now
+    ) {
+        var entry = new MembershipCountEntryEntity();
+        entry.membershipId = membershipId;
+        entry.entryType = CountEntryType.ISSUE;
+        entry.deltaCount = totalCount;
+        entry.sourceType = CountEntrySourceType.ISSUE;
+        entry.sourceId = Long.toString(membershipId);
+        entry.actorAccountId = actorAccountId;
+        entry.createdAt = now;
+        return entry;
+    }
 }

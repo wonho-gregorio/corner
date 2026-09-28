@@ -2,7 +2,7 @@
 
 ## 목적과 상태
 
-이 문서는 확정된 1차 MVP 정책을 PostgreSQL 17 관계형 모델로 옮긴 기준입니다. 전체 설계와 V1~V5 Flyway 스키마·JPA 영속 엔티티 구현을 완료했습니다.
+이 문서는 확정된 1차 MVP 정책을 PostgreSQL 17 관계형 모델로 옮긴 기준입니다. 전체 설계와 V1~V6 Flyway 스키마·JPA 영속 엔티티 구현을 완료했습니다.
 
 ### 구현 현황
 
@@ -13,8 +13,9 @@
 | V3 | 청구·분할 납부·결제·취소·정정·환불·회원권 해지 원장 | 구현 완료 | `V3__create_payment_domain.sql` |
 | V4 | 반복 수업·실제 수업·출석·취소·시간 정정·관리자 예외 | 구현 완료 | `V4__create_lesson_and_attendance_domain.sql` |
 | V5 | 알림 설정 버전·발송 작업·공급자 시도 이력 | 구현 완료 | `V5__create_notification_domain.sql` |
+| V6 | 회원권 발급 멱등성 키 | 구현 완료 | `V6__add_membership_issue_idempotency.sql` |
 
-V1~V5는 Flyway 스키마와 JPA 영속 엔티티가 함께 구현되어 있습니다. 애플리케이션 서비스와 HTTP API는 후속 구현 범위입니다.
+V1~V6는 Flyway 스키마와 JPA 영속 엔티티가 함께 구현되어 있습니다. 업무별 애플리케이션 서비스와 HTTP API를 순차 구현하고 있습니다.
 
 핵심 목표는 다음과 같습니다.
 
@@ -114,7 +115,7 @@ erDiagram
 | `membership_products` | `id`, `gym_id`, `name`, `product_type`, `duration_value`, `duration_unit`, `validity_value`, `validity_unit`, `total_count`, `list_price_won`, `sale_status`, 분할·미납·휴회 정책 컬럼 | 유형별 조건부 검사 적용. 정책 기본값은 부분·분할 납부와 휴회 모두 미허용 |
 | `promotions` | `id`, `gym_id`, `name`, `starts_on`, `ends_on`, `discount_type`, `discount_value`, `status`, `admin_memo` | 기간 순서, 할인값 양수, 정률 100 이하 검사 |
 | `promotion_products` | `promotion_id`, `product_id` | 복합 PK. 정액 할인은 연결 상품 가격보다 작아야 하며 서비스에서 트랜잭션 검증 |
-| `memberships` | `id`, `gym_id`, `member_id`, `product_id`, `promotion_id`, `status`, `start_date`, `end_date`, `total_count`, `remaining_count`, `list_price_won`, `discount_won`, `contract_amount_won`, `terms_snapshot`, `version` | 발급 당시 상품·행사·정책 스냅샷 보존. 회원·상품은 발급 후 변경 금지 |
+| `memberships` | `id`, `gym_id`, `member_id`, `product_id`, `promotion_id`, `idempotency_key`, `status`, `start_date`, `end_date`, `total_count`, `remaining_count`, `list_price_won`, `discount_won`, `contract_amount_won`, `terms_snapshot`, `version` | 발급 당시 상품·행사·정책 스냅샷 보존. 도장별 멱등성 키로 중복 발급 방지. 회원·상품은 발급 후 변경 금지 |
 | `membership_pauses` | `id`, `membership_id`, `planned_start_date`, `planned_end_date`, `actual_resumed_on`, `status`, `extension_days`, `reason`, `approved_by`, `created_at` | `PLANNED`, `ACTIVE`, `COMPLETED`, `CANCELLED`. 실제 휴회일만큼 종료일 연장 |
 | `membership_events` | `id`, `membership_id`, `event_type`, `from_status`, `to_status`, `old_start_date`, `new_start_date`, `old_end_date`, `new_end_date`, `effective_at`, `reason`, `actor_account_id`, `created_at` | 발급, 시작일 변경, 기간 연장, 해지와 상태 전환 원장 |
 | `membership_count_entries` | `id`, `membership_id`, `entry_type`, `delta_count`, `source_type`, `source_id`, `reverses_entry_id`, `reason`, `actor_account_id`, `created_at` | 횟수 원장. `ISSUE`, `ATTENDANCE_DEBIT`, `ATTENDANCE_RESTORE`, `MANUAL_ADD`, `MANUAL_DEDUCT`. 출석 모듈 식별자는 공개 계약 값으로 저장하고 물리 FK를 만들지 않음 |
@@ -238,6 +239,7 @@ PostgreSQL은 외래키 인덱스를 자동 생성하지 않으므로 모든 외
 3. `V3__create_payment_domain.sql`
 4. `V4__create_lesson_and_attendance_domain.sql`
 5. `V5__create_notification_domain.sql`
+6. `V6__add_membership_issue_idempotency.sql`
 
 기본 도장·그룹과 초기 관리자는 고정 데이터 마이그레이션으로 만들지 않습니다. 후속 초기화 명령에서 운영자가 값을 입력하고, 관리자 비밀번호는 BCrypt 또는 Argon2로 해시합니다.
 
