@@ -74,6 +74,81 @@ class MembershipProductEntity {
     private Instant updatedAt;
     private Long updatedBy;
     @Version private long version;
+
+    static MembershipProductEntity create(
+            long gymId, String name, ProductType productType, Integer durationValue, PeriodUnit durationUnit,
+            Integer validityValue, PeriodUnit validityUnit, Integer totalCount, long listPriceWon,
+            boolean partialPaymentAllowed, PaymentPlan defaultPaymentPlan, Integer maxInstallmentCount,
+            InitialPaymentType minimumInitialPaymentType, Long minimumInitialPaymentValue,
+            boolean useBeforeFullPaymentAllowed, AttendancePaymentPolicy overdueAttendancePolicy,
+            boolean pauseAllowed, Integer maxPauseCount, Integer maxPauseDaysPerPause,
+            Integer maxTotalPauseDays, Integer minimumUseDaysBeforePause, boolean extendExpiryOnPause,
+            SaleStatus saleStatus, long actorAccountId, Instant now
+    ) {
+        var product = new MembershipProductEntity();
+        product.gymId = gymId;
+        product.createdAt = now;
+        product.createdBy = actorAccountId;
+        product.apply(name, productType, durationValue, durationUnit, validityValue, validityUnit, totalCount,
+                listPriceWon, partialPaymentAllowed, defaultPaymentPlan, maxInstallmentCount,
+                minimumInitialPaymentType, minimumInitialPaymentValue, useBeforeFullPaymentAllowed,
+                overdueAttendancePolicy, pauseAllowed, maxPauseCount, maxPauseDaysPerPause, maxTotalPauseDays,
+                minimumUseDaysBeforePause, extendExpiryOnPause, saleStatus, actorAccountId, now);
+        return product;
+    }
+
+    void update(
+            String name, ProductType productType, Integer durationValue, PeriodUnit durationUnit,
+            Integer validityValue, PeriodUnit validityUnit, Integer totalCount, long listPriceWon,
+            boolean partialPaymentAllowed, PaymentPlan defaultPaymentPlan, Integer maxInstallmentCount,
+            InitialPaymentType minimumInitialPaymentType, Long minimumInitialPaymentValue,
+            boolean useBeforeFullPaymentAllowed, AttendancePaymentPolicy overdueAttendancePolicy,
+            boolean pauseAllowed, Integer maxPauseCount, Integer maxPauseDaysPerPause,
+            Integer maxTotalPauseDays, Integer minimumUseDaysBeforePause, boolean extendExpiryOnPause,
+            SaleStatus saleStatus, long actorAccountId, Instant now
+    ) {
+        apply(name, productType, durationValue, durationUnit, validityValue, validityUnit, totalCount,
+                listPriceWon, partialPaymentAllowed, defaultPaymentPlan, maxInstallmentCount,
+                minimumInitialPaymentType, minimumInitialPaymentValue, useBeforeFullPaymentAllowed,
+                overdueAttendancePolicy, pauseAllowed, maxPauseCount, maxPauseDaysPerPause, maxTotalPauseDays,
+                minimumUseDaysBeforePause, extendExpiryOnPause, saleStatus, actorAccountId, now);
+    }
+
+    private void apply(
+            String name, ProductType productType, Integer durationValue, PeriodUnit durationUnit,
+            Integer validityValue, PeriodUnit validityUnit, Integer totalCount, long listPriceWon,
+            boolean partialPaymentAllowed, PaymentPlan defaultPaymentPlan, Integer maxInstallmentCount,
+            InitialPaymentType minimumInitialPaymentType, Long minimumInitialPaymentValue,
+            boolean useBeforeFullPaymentAllowed, AttendancePaymentPolicy overdueAttendancePolicy,
+            boolean pauseAllowed, Integer maxPauseCount, Integer maxPauseDaysPerPause,
+            Integer maxTotalPauseDays, Integer minimumUseDaysBeforePause, boolean extendExpiryOnPause,
+            SaleStatus saleStatus, long actorAccountId, Instant now
+    ) {
+        this.name = name;
+        this.productType = productType;
+        this.durationValue = durationValue;
+        this.durationUnit = durationUnit;
+        this.validityValue = validityValue;
+        this.validityUnit = validityUnit;
+        this.totalCount = totalCount;
+        this.listPriceWon = listPriceWon;
+        this.partialPaymentAllowed = partialPaymentAllowed;
+        this.defaultPaymentPlan = defaultPaymentPlan;
+        this.maxInstallmentCount = maxInstallmentCount;
+        this.minimumInitialPaymentType = minimumInitialPaymentType;
+        this.minimumInitialPaymentValue = minimumInitialPaymentValue;
+        this.useBeforeFullPaymentAllowed = useBeforeFullPaymentAllowed;
+        this.overdueAttendancePolicy = overdueAttendancePolicy;
+        this.pauseAllowed = pauseAllowed;
+        this.maxPauseCount = maxPauseCount;
+        this.maxPauseDaysPerPause = maxPauseDaysPerPause;
+        this.maxTotalPauseDays = maxTotalPauseDays;
+        this.minimumUseDaysBeforePause = minimumUseDaysBeforePause;
+        this.extendExpiryOnPause = extendExpiryOnPause;
+        this.saleStatus = saleStatus;
+        this.updatedAt = now;
+        this.updatedBy = actorAccountId;
+    }
 }
 
 @Getter
@@ -96,6 +171,34 @@ class PromotionEntity {
     private Instant updatedAt;
     private Long updatedBy;
     @Version private long version;
+
+    static PromotionEntity create(
+            long gymId, String name, LocalDate startsOn, LocalDate endsOn, DiscountType discountType,
+            long discountValue, PromotionStatus status, String adminMemo, long actorAccountId, Instant now
+    ) {
+        var promotion = new PromotionEntity();
+        promotion.gymId = gymId;
+        promotion.createdAt = now;
+        promotion.createdBy = actorAccountId;
+        promotion.update(name, startsOn, endsOn, discountType, discountValue, status, adminMemo,
+                actorAccountId, now);
+        return promotion;
+    }
+
+    void update(
+            String name, LocalDate startsOn, LocalDate endsOn, DiscountType discountType,
+            long discountValue, PromotionStatus status, String adminMemo, long actorAccountId, Instant now
+    ) {
+        this.name = name;
+        this.startsOn = startsOn;
+        this.endsOn = endsOn;
+        this.discountType = discountType;
+        this.discountValue = discountValue;
+        this.status = status;
+        this.adminMemo = adminMemo;
+        this.updatedAt = now;
+        this.updatedBy = actorAccountId;
+    }
 }
 
 @Getter
@@ -107,6 +210,14 @@ class PromotionProductEntity {
     private PromotionProductId id;
     private Instant createdAt;
     private Long createdBy;
+
+    static PromotionProductEntity create(long promotionId, long productId, long actorAccountId, Instant now) {
+        var link = new PromotionProductEntity();
+        link.id = new PromotionProductId(promotionId, productId);
+        link.createdAt = now;
+        link.createdBy = actorAccountId;
+        return link;
+    }
 }
 
 @Getter
@@ -116,6 +227,11 @@ class PromotionProductEntity {
 class PromotionProductId implements Serializable {
     private Long promotionId;
     private Long productId;
+
+    PromotionProductId(Long promotionId, Long productId) {
+        this.promotionId = promotionId;
+        this.productId = productId;
+    }
 }
 
 @Getter
