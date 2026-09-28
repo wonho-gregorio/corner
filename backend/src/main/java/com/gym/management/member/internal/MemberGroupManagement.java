@@ -37,6 +37,8 @@ import java.util.Optional;
 interface MemberGroupRepository extends JpaRepository<MemberGroupEntity, Long> {
     List<MemberGroupEntity> findAllByGymIdOrderByDisplayOrderAscNameAscIdAsc(Long gymId);
 
+    Optional<MemberGroupEntity> findByIdAndGymId(Long id, Long gymId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select memberGroup from MemberGroupEntity memberGroup where memberGroup.id = :groupId and memberGroup.gymId = :gymId")
     Optional<MemberGroupEntity> findForUpdateByIdAndGymId(
