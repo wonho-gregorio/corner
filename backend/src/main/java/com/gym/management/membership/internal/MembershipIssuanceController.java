@@ -158,7 +158,10 @@ class MembershipIssuanceService {
                     membership.getId(), product.getTotalCount(), actorAccountId, now));
         }
         var charge = chargeIssuer.create(new ChargeIssuer.IssueCharge(
-                gymId, memberId, membership.getId(), planType, contractAmountWon, command.firstDueOn(),
+                gymId, memberId, membership.getId(), planType, contractAmountWon,
+                product.getMinimumInitialPaymentType() == null ? null
+                        : ChargeIssuer.MinimumPaymentType.valueOf(product.getMinimumInitialPaymentType().name()),
+                product.getMinimumInitialPaymentValue(), command.firstDueOn(),
                 installmentSchedule, actorAccountId));
         auditTrail.record(gymId, actorAccountId, "MEMBERSHIP", "MEMBERSHIP_ISSUED", "MEMBERSHIP",
                 Long.toString(membership.getId()), null, null, auditValues(membership, charge.id()), now);
@@ -315,7 +318,8 @@ class MembershipIssuanceService {
                 membership.getRemainingCount(), membership.getListPriceWon(), membership.getDiscountWon(),
                 membership.getContractAmountWon(), membership.getTermsSnapshot(), membership.getIssuedAt(),
                 new ChargeView(charge.id(), charge.planType(), charge.contractAmountWon(), charge.paidAmountWon(),
-                        charge.balanceWon(), charge.status(), charge.firstDueOn(), charge.installments()));
+                        charge.balanceWon(), charge.status(), charge.minimumInitialPaymentType(),
+                        charge.minimumInitialPaymentValue(), charge.firstDueOn(), charge.installments()));
     }
 
     private static void assertSameRequest(
@@ -380,6 +384,8 @@ class MembershipIssuanceService {
             long paidAmountWon,
             long balanceWon,
             String status,
+            ChargeIssuer.MinimumPaymentType minimumInitialPaymentType,
+            Long minimumInitialPaymentValue,
             LocalDate firstDueOn,
             List<ChargeIssuer.Installment> installments
     ) {

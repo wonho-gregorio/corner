@@ -26,6 +26,7 @@ enum PaymentTransactionType { PAYMENT, CANCELLATION, REFUND }
 enum PaymentMethod { CASH, CARD, BANK_TRANSFER }
 enum PaymentInputSource { MANUAL, PROVIDER }
 enum PaymentSyncStatus { NOT_APPLICABLE, PENDING, SYNCED, FAILED }
+enum InitialPaymentRequirementType { AMOUNT, RATE }
 
 @Getter
 @Entity
@@ -43,6 +44,8 @@ class ChargeEntity {
     private long paidAmountWon;
     private long balanceWon;
     @Enumerated(EnumType.STRING) private ChargeStatus status;
+    @Enumerated(EnumType.STRING) private InitialPaymentRequirementType minimumInitialPaymentType;
+    private Long minimumInitialPaymentValue;
     private LocalDate firstDueOn;
     private Instant createdAt;
     private Long createdBy;
@@ -52,7 +55,8 @@ class ChargeEntity {
 
     static ChargeEntity create(
             long gymId, long memberId, long membershipId, ChargePlanType planType,
-            long contractAmountWon, LocalDate firstDueOn, long actorAccountId, Instant now
+            long contractAmountWon, InitialPaymentRequirementType minimumInitialPaymentType,
+            Long minimumInitialPaymentValue, LocalDate firstDueOn, long actorAccountId, Instant now
     ) {
         var charge = new ChargeEntity();
         charge.gymId = gymId;
@@ -64,12 +68,23 @@ class ChargeEntity {
         charge.paidAmountWon = 0;
         charge.balanceWon = contractAmountWon;
         charge.status = contractAmountWon == 0 ? ChargeStatus.PAID : ChargeStatus.SCHEDULED;
+        charge.minimumInitialPaymentType = minimumInitialPaymentType;
+        charge.minimumInitialPaymentValue = minimumInitialPaymentValue;
         charge.firstDueOn = firstDueOn;
         charge.createdAt = now;
         charge.createdBy = actorAccountId;
         charge.updatedAt = now;
         charge.updatedBy = actorAccountId;
         return charge;
+    }
+
+    void applyPayment(long amountWon, ChargeStatus nextStatus, long actorAccountId, Instant now) {
+        if (amountWon <= 0 || amountWon > balanceWon) throw new IllegalArgumentException("Invalid payment amount");
+        this.paidAmountWon += amountWon;
+        this.balanceWon -= amountWon;
+        this.status = nextStatus;
+        this.updatedAt = now;
+        this.updatedBy = actorAccountId;
     }
 }
 
@@ -103,6 +118,34 @@ class ChargeInstallmentEntity {
         installment.createdAt = now;
         installment.updatedAt = now;
         return installment;
+    }
+
+    long remainingAmountWon() {
+        return amountWon - paidAmountWon;
+    }
+
+    void applyPayment(long paymentWon, LocalDate businessDate, Instant now) {
+        if (paymentWon <= 0 || paymentWon > remainingAmountWon()) {
+            throw new IllegalArgumentException("Invalid installment payment amount");
+        }
+        this.paidAmountWon += paymentWon;
+        var remaining = remainingAmountWon();
+        this.status = remaining == 0
+                ? ChargeStatus.PAID
+                : (dueOn.isBefore(businessDate) ? ChargeStatus.OVERDUE : ChargeStatus.PARTIALLY_PAID);
+        this.updatedAt = now;
+    }
+
+    void refreshStatus(LocalDate businessDate, Instant now) {
+        var nextStatus = remainingAmountWon() == 0
+                ? ChargeStatus.PAID
+                : (dueOn.isBefore(businessDate)
+                ? ChargeStatus.OVERDUE
+                : (paidAmountWon > 0 ? ChargeStatus.PARTIALLY_PAID : ChargeStatus.SCHEDULED));
+        if (status != nextStatus) {
+            status = nextStatus;
+            updatedAt = now;
+        }
     }
 }
 
@@ -141,6 +184,21 @@ class PaymentOperationEntity {
     private Long processedBy;
     private String reason;
     private String memo;
+
+    static PaymentOperationEntity register(
+            long gymId, long chargeId, String idempotencyKey, Instant processedAt,
+            long actorAccountId, String memo
+    ) {
+        var operation = new PaymentOperationEntity();
+        operation.gymId = gymId;
+        operation.chargeId = chargeId;
+        operation.operationType = PaymentOperationType.REGISTER;
+        operation.idempotencyKey = idempotencyKey;
+        operation.processedAt = processedAt;
+        operation.processedBy = actorAccountId;
+        operation.memo = memo;
+        return operation;
+    }
 }
 
 @Getter
@@ -165,4 +223,45 @@ class PaymentTransactionEntity {
     private String approvalNumber;
     @Enumerated(EnumType.STRING) private PaymentSyncStatus syncStatus;
     private Instant createdAt;
+
+    static PaymentTransactionEntity payment(
+            long operationId, long chargeId, PaymentMethod paymentMethod, long amountWon,
+            String approvalNumber, Instant now
+    ) {
+        var transaction = new PaymentTransactionEntity();
+        transaction.operationId = operationId;
+        transaction.chargeId = chargeId;
+        transaction.transactionType = PaymentTransactionType.PAYMENT;
+        transaction.paymentMethod = paymentMethod;
+        transaction.amountWon = amountWon;
+        transaction.inputSource = PaymentInputSource.MANUAL;
+        transaction.approvalNumber = approvalNumber;
+        transaction.syncStatus = PaymentSyncStatus.NOT_APPLICABLE;
+        transaction.createdAt = now;
+        return transaction;
+    }
+}
+
+@Getter
+@Entity
+@Table(name = "payment_installment_allocations")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+class PaymentInstallmentAllocationEntity {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private Long transactionId;
+    private Long installmentId;
+    private long amountWon;
+    private Instant createdAt;
+
+    static PaymentInstallmentAllocationEntity create(
+            long transactionId, long installmentId, long amountWon, Instant now
+    ) {
+        var allocation = new PaymentInstallmentAllocationEntity();
+        allocation.transactionId = transactionId;
+        allocation.installmentId = installmentId;
+        allocation.amountWon = amountWon;
+        allocation.createdAt = now;
+        return allocation;
+    }
 }

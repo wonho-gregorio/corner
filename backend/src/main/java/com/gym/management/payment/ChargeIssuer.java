@@ -9,6 +9,7 @@ public interface ChargeIssuer {
     ChargeSnapshot getByMembershipId(long membershipId);
 
     enum PlanType { LUMP_SUM, PARTIAL, INSTALLMENT, UNPAID }
+    enum MinimumPaymentType { AMOUNT, RATE }
 
     record Installment(int installmentNo, LocalDate dueOn, long amountWon) {
     }
@@ -19,6 +20,8 @@ public interface ChargeIssuer {
             long membershipId,
             PlanType planType,
             long contractAmountWon,
+            MinimumPaymentType minimumInitialPaymentType,
+            Long minimumInitialPaymentValue,
             LocalDate firstDueOn,
             List<Installment> installments,
             long actorAccountId
@@ -33,6 +36,8 @@ public interface ChargeIssuer {
             long paidAmountWon,
             long balanceWon,
             String status,
+            MinimumPaymentType minimumInitialPaymentType,
+            Long minimumInitialPaymentValue,
             LocalDate firstDueOn,
             List<Installment> installments
     ) {

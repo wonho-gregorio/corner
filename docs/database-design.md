@@ -2,7 +2,7 @@
 
 ## 목적과 상태
 
-이 문서는 확정된 1차 MVP 정책을 PostgreSQL 17 관계형 모델로 옮긴 기준입니다. 전체 설계와 V1~V6 Flyway 스키마·JPA 영속 엔티티 구현을 완료했습니다.
+이 문서는 확정된 1차 MVP 정책을 PostgreSQL 17 관계형 모델로 옮긴 기준입니다. 전체 설계와 V1~V7 Flyway 스키마·JPA 영속 엔티티 구현을 완료했습니다.
 
 ### 구현 현황
 
@@ -14,8 +14,9 @@
 | V4 | 반복 수업·실제 수업·출석·취소·시간 정정·관리자 예외 | 구현 완료 | `V4__create_lesson_and_attendance_domain.sql` |
 | V5 | 알림 설정 버전·발송 작업·공급자 시도 이력 | 구현 완료 | `V5__create_notification_domain.sql` |
 | V6 | 회원권 발급 멱등성 키 | 구현 완료 | `V6__add_membership_issue_idempotency.sql` |
+| V7 | 최초 납부 조건과 거래별 회차 배분 원장 | 구현 완료 | `V7__add_payment_registration_support.sql` |
 
-V1~V6는 Flyway 스키마와 JPA 영속 엔티티가 함께 구현되어 있습니다. 업무별 애플리케이션 서비스와 HTTP API를 순차 구현하고 있습니다.
+V1~V7은 Flyway 스키마와 JPA 영속 엔티티가 함께 구현되어 있습니다. 업무별 애플리케이션 서비스와 HTTP API를 순차 구현하고 있습니다.
 
 핵심 목표는 다음과 같습니다.
 
@@ -135,11 +136,12 @@ erDiagram
 
 | 테이블 | 주요 컬럼 | 핵심 제약과 용도 |
 | --- | --- | --- |
-| `charges` | `id`, `gym_id`, `member_id`, `membership_id`, `plan_type`, `contract_amount_won`, `adjusted_amount_won`, `paid_amount_won`, `balance_won`, `status`, `first_due_on`, `version` | 회원권당 청구 한 건. 결제는 반드시 청구를 참조. 해지 등으로 의무액이 바뀌면 원 계약금액은 보존하고 조정 금액만 변경 |
+| `charges` | `id`, `gym_id`, `member_id`, `membership_id`, `plan_type`, `contract_amount_won`, `adjusted_amount_won`, `paid_amount_won`, `balance_won`, `status`, `minimum_initial_payment_type`, `minimum_initial_payment_value`, `first_due_on`, `version` | 회원권당 청구 한 건. 결제는 반드시 청구를 참조. 최초 납부 조건은 발급 당시 정책을 보존. 해지 등으로 의무액이 바뀌면 원 계약금액은 보존하고 조정 금액만 변경 |
 | `charge_installments` | `id`, `charge_id`, `installment_no`, `due_on`, `amount_won`, `paid_amount_won`, `status` | `(charge_id, installment_no)` 유일. `SCHEDULED`, `PARTIALLY_PAID`, `PAID`, `OVERDUE`, `CANCELLED` |
 | `charge_plan_revisions` | `id`, `charge_id`, `revision_no`, `before_plan`, `after_plan`, `reason`, `changed_by`, `created_at` | 납부 계획을 삭제하지 않고 변경 전후 스냅샷 보존 |
 | `payment_operations` | `id`, `gym_id`, `charge_id`, `operation_type`, `idempotency_key`, `processed_at`, `processed_by`, `reason`, `memo` | 한 번의 저장 작업 묶음. `REGISTER`, `CANCEL`, `CORRECT`, `REFUND`; `(gym_id, idempotency_key)` 유일 |
 | `payment_transactions` | `id`, `operation_id`, `charge_id`, `transaction_type`, `payment_method`, `amount_won`, `original_transaction_id`, `provider`, `external_transaction_id`, `approval_number`, `sync_status`, `created_at` | 금액은 항상 양수. 취소·환불은 원 결제 거래를 참조하며 원거래를 수정하지 않음 |
+| `payment_installment_allocations` | `id`, `transaction_id`, `installment_id`, `amount_won`, `created_at` | 결제수단별 실제 거래가 어느 납부 회차에 얼마씩 배분됐는지 보존 |
 
 결제 정정은 `CORRECT` 작업 한 건 안에 원거래의 `CANCELLATION`과 올바른 `PAYMENT` 거래를 함께 생성합니다. 청구 행을 잠근 뒤 거래 추가, 회차 배분과 `paid_amount_won`·`balance_won`·상태 재계산을 한 짧은 트랜잭션으로 처리합니다. 외부 결제 호출은 잠금 트랜잭션 밖에서 수행합니다.
 
@@ -240,6 +242,7 @@ PostgreSQL은 외래키 인덱스를 자동 생성하지 않으므로 모든 외
 4. `V4__create_lesson_and_attendance_domain.sql`
 5. `V5__create_notification_domain.sql`
 6. `V6__add_membership_issue_idempotency.sql`
+7. `V7__add_payment_registration_support.sql`
 
 기본 도장·그룹과 초기 관리자는 고정 데이터 마이그레이션으로 만들지 않습니다. 후속 초기화 명령에서 운영자가 값을 입력하고, 관리자 비밀번호는 BCrypt 또는 Argon2로 해시합니다.
 
